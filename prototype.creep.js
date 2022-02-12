@@ -1,3 +1,5 @@
+let states = require('states')
+
 var roles = 
 {
     upgrader: require('role.upgrader'),
@@ -13,6 +15,11 @@ var roles =
 Creep.prototype.runRole =
     function () 
     {
+        if (!this.memory.state) 
+        {
+            this.initStateMemory();
+        }
+
         if (this.memory.role)
         {
             roles[this.memory.role].run(this);
@@ -28,3 +35,58 @@ Creep.prototype.isFull =
         }
         return this._isFull;
     }    
+
+Creep.prototype.initStateMemory = 
+    function() 
+    {
+        if (this.memory.state) 
+        {
+            delete this.memory.state;
+        }
+        // state = a stack of states, each with a name and a scope containing parameters
+        this.memory.state = [
+            {
+                name: "IDLE",
+                scope: { }
+            }
+        ]
+    }
+
+Creep.prototype.pushState = 
+    function(state) 
+    {
+        if (this.memory.state) 
+        {
+            this.memory.state.unshift(state)
+        }
+    }
+
+Creep.prototype.popState = 
+    function() 
+    {
+        if (this.memory.state) 
+        {
+            this.memory.state.shift();
+        }
+    }
+
+Creep.prototype.getState = 
+    function() 
+    {
+        if (this.memory.state) 
+        {
+            return this.memory.state[0];
+        }
+
+        return undefined;
+    }
+
+Creep.prototype.executeState = 
+    function() 
+    {
+        let state = this.getState();
+        if (state)
+        {
+            states[state.name](this, state.scope);
+        }
+    }

@@ -23,7 +23,7 @@ module.exports.loop = function ()
 
     drawMapInfo ();
 
-    let my_rooms = [];
+    let myRooms = [];
     for (let spawn_name in Game.spawns)
     {
         let spawn = Game.spawns[spawn_name];
@@ -31,22 +31,24 @@ module.exports.loop = function ()
         spawn.run ();
 
         // Create a list of rooms which have my spawns, no repeats
-        if (!my_rooms[spawn]) 
+        if (!myRooms[spawn]) 
         {
-            my_rooms.push (spawn.room);
+            myRooms.push (spawn.room);
         }
     }
 
     // Run the RoomManager for each room
-    my_rooms.forEach((room) => {
-        RoomManager.run(room);
-        RoomPlanner.run(room);
-    });
+    for(const room in myRooms)
+    {
+        RoomManager.run(myRooms[room]);
+        RoomPlanner.run(myRooms[room]);
+    };
 
     // Execute all creeps scripts
-    Game.creeps.forEach((name) => {
+    for(const name in Game.creeps)
+    {
         Game.creeps[name].runRole ();
-    });
+    };
 }
 
 function initMemory ()
