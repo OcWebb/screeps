@@ -38,15 +38,15 @@ module.exports.loop = function ()
     }
 
     // Run the RoomManager for each room
-    my_rooms.forEach(function (room){
+    my_rooms.forEach((room) => {
         RoomManager.run(room);
         RoomPlanner.run(room);
     });
+
     // Execute all creeps scripts
-    for(var name in Game.creeps)
-    {
+    Game.creeps.forEach((name) => {
         Game.creeps[name].runRole ();
-    }
+    });
 }
 
 function initMemory ()
@@ -105,25 +105,26 @@ function garbageCollection ()
             continue;
         }
 
+        var creep_room = creep_memory.room;
         var creep_memory = Memory.creeps[name];
-        if (!Game.rooms[creep_memory.room] || !Game.rooms[creep_memory.room].memory)
+        if (!Game.rooms[creep_room] || !Game.rooms[creep_room].memory)
         {
             continue;
         }
 
-        Game.rooms[creep_memory.room].memory.units[creep_memory.role] -= 1;
+        Game.rooms[creep_room].memory.units[creep_memory.role] -= 1;
 
         if (creep_memory.source != undefined)
         {
             let source_memory = false;
             try {
-                source_memory = Game.rooms[creep_memory.room].memory.sources[creep_memory.source]
+                source_memory = Game.rooms[creep_room].memory.sources[creep_memory.source]
                 console.log(source_memory);
             } catch (e) {
                 console.log ("GARB: Memory not found for source '" + creep_memory.source + "'");
             }
 
-            if (source_memory != false)
+            if (source_memory)
             {
                 if (creep_memory.role == 'miner')
                 {

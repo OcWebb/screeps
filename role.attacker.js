@@ -3,7 +3,7 @@ var roleInvader = {
     /** @param {Creep} creep **/
     run: function(creep) 
     {
-    	let flag = Game.flags["attackFlag"];
+    	let flag = Game.flags["attack"];
         let enemy = creep.room.find(FIND_HOSTILE_CREEPS);    
         if (enemy.length)
         {

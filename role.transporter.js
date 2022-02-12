@@ -56,10 +56,37 @@ var roleTransporter =
         // under attack
         if (creep.room.memory.operating_mode == "UNDER_ATTACK")
         {
-            let center = creep.room.memory.layout.center;
-            let pos = new RoomPosition (center.x, center.y, creep.room.name);
-            creep.moveTo (pos, {visualizePathStyle: {stroke: '#ffffff'}});
-            return;
+            var storage_vat = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return (structure.structureType == STRUCTURE_STORAGE &&
+                        structure.store[RESOURCE_ENERGY] != structure.store.getCapacity(RESOURCE_ENERGY));
+            }
+            });
+            if (storage_vat)
+            {
+                return storage_vat;
+            } 
+            
+            var tower = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return (structure.structureType == STRUCTURE_TOWER &&
+                        structure.store[RESOURCE_ENERGY] <= structure.store.getCapacity(RESOURCE_ENERGY) * fill_amount);
+            }
+            });
+            
+            if (tower && storage_vat)
+            {
+                // fill target
+                if (creep.transfer (newTarget, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) 
+                {
+                    creep.moveTo (newTarget, {visualizePathStyle: {stroke: '#ffffff'}});
+                }
+            }
+        
+            // let center = creep.room.memory.layout.center;
+            // let pos = new RoomPosition (center.x, center.y, creep.room.name);
+            // creep.moveTo (pos, {visualizePathStyle: {stroke: '#ffffff'}});
+            // return;
         }
 
 

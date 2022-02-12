@@ -13,8 +13,13 @@ var roleMiner = {
         }
         this.room_mem = Game.rooms[creep.room.name].memory;
         this.source_id = creep.memory.source;
-        let container = common.unstringifyPos (this.room_mem.sources[creep.memory.source].container);
-        this.container_pos = new RoomPosition (container.x, container.y, creep.room.name);
+        
+        try {
+            let container = common.unstringifyPos (this.room_mem.sources[creep.memory.source].container);
+            this.container_pos = new RoomPosition (container.x, container.y, creep.room.name);
+        } catch {
+            //console.log("MINER: Could not read container position!");
+        }
 
         if(creep.memory.carrying && creep.carry.energy == 0)
         {
@@ -94,6 +99,13 @@ var roleMiner = {
     // Moves the miner on top of his container
     moveToContainer (creep)
     {
+        if (!this.container_pos)
+        {
+            var source = Game.getObjectById (creep.memory.source);
+            creep.moveTo (source, {visualizePathStyle: {stroke: '#ffffff'}, reusePath: 10});
+            return;
+        }
+        
         if (creep.pos != this.container_pos)
         {
             creep.moveTo (this.container_pos, {visualizePathStyle: {stroke: '#ffffff'}, reusePath: 10});

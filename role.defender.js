@@ -77,13 +77,19 @@ var roleDefender = {
                             return object.getActiveBodyparts(ATTACK) != 0 || object.getActiveBodyparts(RANGED_ATTACK) != 0;
                         }
                     });
+                    
+                    if (!target)
+                    {
+                        target = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+
+                    }
 
                     if (creep.rangedAttack (target) == ERR_NOT_IN_RANGE)
                     {
                         creep.moveTo(target);
                         //break;
                     } 
-
+                    //common.log(target)
                     if (creep.pos.inRangeTo (target, 3))
                     {
                         let path = PathFinder.search(creep.pos, {pos:target.pos,range:3},{flee:true}).path
