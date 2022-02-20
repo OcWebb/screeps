@@ -13,8 +13,8 @@ var OPERATING_MODES =
         {
             'miner': 'TBD',
             'transporter': 'TBD',
-            'defender': 2,
-            'scout': 1,
+            'defender': 1,
+            'scout': 0,
             'builder': 3,
             'upgrader': 2
         },
@@ -60,7 +60,7 @@ var RoomManager =
         this.flushMemory (room);
     },
 
-    // GOOD
+
     initMemory (room)
     {
         this.room_name = room.name;
@@ -169,6 +169,7 @@ var RoomManager =
             if (this.memory.sources[source_id].miners == undefined ||
                 this.memory.sources[source_id].transporters == undefined)
             {
+                // todo: fix so it will work with remote miners
                 var creepsInRoom = Game.rooms[this.room_name].find(FIND_MY_CREEPS);
                 let miner_count = _.sum(creepsInRoom, (c) => c.memory.role == 'miner' && c.memory.source == source_id);
                 
@@ -195,7 +196,7 @@ var RoomManager =
             }
         });
 
-        // ensure enemies arnt just teleporting back and forth
+        // TODO: ensure enemies arnt just teleporting back and forth
         if (enemies && enemies.length)
         {
             this.memory.operating_mode = 'UNDER_ATTACK'

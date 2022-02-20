@@ -112,7 +112,6 @@ var roleDefender = {
             default:
                 //console.log(creep.name + " - Task not found");
         }
-
     },
 
     canKill (my_creep, hostile)

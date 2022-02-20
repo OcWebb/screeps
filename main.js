@@ -1,14 +1,21 @@
 var RoomManager = require('RoomManager');
 var RoomPlanner = require('RoomPlanner');
 var LAYOUTS = require('Layouts');
+const common = require('./common');
 require('prototype.spawn');
 require('prototype.creep');
 
 module.exports.loop = function ()
 {
-
-    if(Game.cpu.bucket > 9000) {
+    if(Game.cpu.bucket > 9000) 
+    {
         Game.cpu.generatePixel();
+    }
+
+    let visualFlag = Game.flags["visual-3"];
+    if (visualFlag)
+    {
+        // common.showLayout (visualFlag.pos, "bunker", 8, visualFlag.room.name);
     }
 
     if (Memory.newGame)
@@ -38,17 +45,37 @@ module.exports.loop = function ()
     }
 
     // Run the RoomManager for each room
+    let cpu1 = Game.cpu.getUsed();
     for(const room in myRooms)
     {
         RoomManager.run(myRooms[room]);
         RoomPlanner.run(myRooms[room]);
     };
+    let cpu2 = Game.cpu.getUsed();
+    let elapsed = cpu2 - cpu1;
+    // console.log("room planner + manager: " + elapsed.toFixed(2));
 
+    let creepCPU = [];
     // Execute all creeps scripts
     for(const name in Game.creeps)
     {
-        Game.creeps[name].runRole ();
+        let cpu3 = Game.cpu.getUsed();
+        Game.creeps[name].runRole();
+        let cpu4 = Game.cpu.getUsed();
+        
+        let elapsed = cpu4 - cpu3;
+        creepCPU.push({name:name, cpu:elapsed})
+        // console.log("creep " + name + "'s CPU:     " + elapsed);
     };
+
+    let sorted = _.sortBy(creepCPU, "cpu").reverse();
+
+    for (let c in sorted)
+    {
+        // console.log(sorted[c]["cpu"]);
+        // console.log(sorted[c]['name'] + ": " + sorted[c]["cpu"].toFixed(2))
+    }
+    // console.log(" ----- ----- " + Game.cpu.getUsed().toFixed(2) + " ----- -----\n\n");
 }
 
 function initMemory ()
@@ -106,9 +133,9 @@ function garbageCollection ()
         {
             continue;
         }
-
-        var creep_room = creep_memory.room;
+        
         var creep_memory = Memory.creeps[name];
+        var creep_room = creep_memory.room;
         if (!Game.rooms[creep_room] || !Game.rooms[creep_room].memory)
         {
             continue;

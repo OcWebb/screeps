@@ -5,26 +5,26 @@ var roleBuilder = {
     /** @param {Creep} creep **/
     run: function(creep)
     {
-        if (!creep.memory.target)
+        if (!creep.memory.target && creep.room.memory.construction.length)
         {
-            for (let prio in creep.room.memory.construction)
-            {
-                let build_arr = creep.room.memory.construction[prio];
-                if (!build_arr || !build_arr.length){continue}
-                creep.memory.target = build_arr[0];
-                return;
+            creep.memory.target = creep.room.memory.construction[0];
+        }
+
+        let t = creep.room.find(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return (structure.hits < structure.hitsMax * .20 &&
+                        structure.hits < 500);
             }
-        }
+        });
 
-
-        if(creep.memory.building && creep.carry.energy == 0 || (!creep.memory.target || creep.memory.target == ''))
-        {
-            creep.memory.building = false;
-        }
 
         if(!creep.memory.building && creep.carry.energy == creep.carryCapacity && creep.memory.target && creep.memory.target != '')
         {
             creep.memory.building = true;
+        }
+        if(creep.memory.building && creep.carry.energy == 0 || (!creep.memory.target || creep.memory.target == '') || t.length > 0)
+        {
+            creep.memory.building = false;
         }
 
         if(creep.memory.repairing && creep.carry.energy == 0 || creep.memory.building)
@@ -52,32 +52,32 @@ var roleBuilder = {
             // add target from mem
             if (creep.memory.target)
             {
-                let prio = creep.memory.target.slice (0,2);
-                let str_pos = creep.memory.target.slice (4);
-                let encoding = creep.memory.target.slice (2,4);
+                let encoding = creep.memory.target.slice (0,2);
+                let strPos = creep.memory.target.slice (2);
                 let type = common.decodeStructure (encoding);
-                let target_pos = common.unstringifyPos (str_pos);
-
-                const room_pos = new RoomPosition(target_pos.x, target_pos.y, creep.room.name);
-                let ret = creep.room.lookForAt(LOOK_CONSTRUCTION_SITES, room_pos);
+                let targetPos = common.unstringifyPos (strPos);
+                // console.log(encoding + "  " +  strPos)
+                
+                const roomPos = new RoomPosition(targetPos.x, targetPos.y, creep.room.name);
+                let constructionSites = creep.room.lookForAt(LOOK_CONSTRUCTION_SITES, roomPos);
 
                 // no sites found, delete pos from construct memory and reset target
-                if (!ret.length)
+                if (!constructionSites.length)
                 {
-                    let create = creep.room.createConstructionSite(target_pos.x, target_pos.y, type);
-                    if (create == OK) 
+                    let create = creep.room.createConstructionSite(targetPos.x, targetPos.y, type);
+                    if (create != OK) 
                     {
-                        return;
+                        creep.room.memory.construction.shift();
+                        delete creep.memory.target;
                     }
-                    creep.room.memory.construction[prio].shift();
-                    delete creep.memory.target;
                 // site found, build
                 } else {
-                    let site = ret[0];
+                    let site = constructionSites[0];
                     if(creep.build(site) == ERR_NOT_IN_RANGE)
                     {
                         creep.moveTo(site, {visualizePathStyle: {stroke: '#ffffff'}});
                     }
+                    return;
                 }
             }
         }
@@ -113,7 +113,7 @@ var roleBuilder = {
             var containers = creep.room.find(FIND_STRUCTURES, {
                 filter: (structure) => {
                     return (structure.structureType == STRUCTURE_CONTAINER &&
-                    structure.hits < structure.hitsMax * .60);
+                    structure.hits < structure.hitsMax * .30);
                 }
             });
             var roads = creep.room.find(FIND_STRUCTURES, {
@@ -126,7 +126,7 @@ var roleBuilder = {
                 filter: (structure) => {
                     return (structure.structureType == STRUCTURE_WALL &&
                     structure.hits < structure.hitsMax * .60 &&
-                    structure.hits < 50000);
+                    structure.hits < 5000);
                 }
             });
 
@@ -210,7 +210,7 @@ var roleBuilder = {
                     creep.moveTo(newContainer, {visualizePathStyle: {stroke: '#ffaa00'}, reusePath: 10});
                 }
             }// Pick up dropped energy
-            else if (resource)
+            else if (resource && creep.room.energyAvailable == creep.room.energyCapacityAvailable)
             {
                 if (creep.pickup (resource) == ERR_NOT_IN_RANGE)
                 {

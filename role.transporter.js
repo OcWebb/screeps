@@ -1,6 +1,5 @@
 let common = require('common');
 
-
 // Add target and Fill to memory;
 var roleTransporter = 
 {
@@ -14,7 +13,7 @@ var roleTransporter =
             creep.memory.carrying = false;
         }
         
-        if(!creep.memory.carrying && creep.isFull ()) 
+        if(!creep.memory.carrying && creep.isFull()) 
         {
 	        creep.memory.carrying = true;
         }
@@ -48,105 +47,172 @@ var roleTransporter =
             creep.memory.spawn = spawns[0].id;
         }
 
-        if (!creep.memory.target)
-        {
-            creep.memory.target = 'none';
-        }
 
-        // under attack
-        if (creep.room.memory.operating_mode == "UNDER_ATTACK")
-        {
-            var storage_vat = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-            filter: (structure) => {
-                return (structure.structureType == STRUCTURE_STORAGE &&
-                        structure.store[RESOURCE_ENERGY] != structure.store.getCapacity(RESOURCE_ENERGY));
-            }
-            });
-            if (storage_vat)
-            {
-                return storage_vat;
-            } 
-            
-            var tower = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-            filter: (structure) => {
-                return (structure.structureType == STRUCTURE_TOWER &&
-                        structure.store[RESOURCE_ENERGY] <= structure.store.getCapacity(RESOURCE_ENERGY) * fill_amount);
-            }
-            });
-            
-            if (tower && storage_vat)
-            {
-                // fill target
-                if (creep.transfer (newTarget, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) 
-                {
-                    creep.moveTo (newTarget, {visualizePathStyle: {stroke: '#ffffff'}});
-                }
-            }
+
+
+        let currentState = creep.getState();
+        // creep.logState();
         
-            // let center = creep.room.memory.layout.center;
-            // let pos = new RoomPosition (center.x, center.y, creep.room.name);
-            // creep.moveTo (pos, {visualizePathStyle: {stroke: '#ffffff'}});
-            // return;
-        }
-
-
-        // If empty
-        if(!creep.memory.carrying)
-        {
-            // Make sure source is assigned in memory
-            if (!creep.memory.source)
-            {
-                return;
-            }
-            
-            this.gatherEnergy (creep);
-        //If full
-        }else{
-            let newTarget = this.getTargetToFill (creep);
-            if (newTarget != 'none') 
-            {
-                // fill target
-                if (creep.transfer (newTarget, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) 
+        switch (currentState.name) {
+            case "IDLE":
+                if (creep.carry.energy == 0)
                 {
-                    creep.moveTo (newTarget, {visualizePathStyle: {stroke: '#ffffff'}});
+                    let state = {
+                        name: "COLLECT",
+                        context: {
+                            sourceId: this.source_id
+                        }
+                    };
+                    creep.pushState(state)
+                } else {
+                    let state = {
+                        name: "FILL",
+                        context: {
+                            targetId: this.getTargetIdToFill(creep)
+                        }
+                    };
+                    creep.pushState(state)
                 }
-            } 
+                break;
             
+            case "COLLECT":
+
+                var assignedSource = Game.getObjectById (creep.memory.source);
+                var droppedEnergy = assignedSource.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
+                    filter: (r) => r.resourceType == RESOURCE_ENERGY
+                });
+                
+                // TODO use storage near spawn if closer
+
+                // Pick up dropped energy
+                if (droppedEnergy)
+                {
+                    var distanceToEnergy = assignedSource.pos.getRangeTo (droppedEnergy);
+                    if (distanceToEnergy < 5)
+                    {
+                        if (creep.pickup (droppedEnergy) == ERR_NOT_IN_RANGE)
+                        {
+                            let state = {
+                                name: "MOVE",
+                                context: {
+                                    position: common.stringifyPos(droppedEnergy.pos)
+                                }
+                            };
+                            creep.pushState(state)
+                            break;
+                        }
+                    }
+                }
+
+                if (creep.memory.source_container)
+                {
+                    let container = Game.getObjectById (creep.memory.source_container);
+                    if (creep.withdraw (container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) 
+                    {
+                        let state = {
+                            name: "MOVE",
+                            context: {
+                                position: common.stringifyPos(container.pos)
+                            }
+                        };
+                        creep.pushState(state)
+                        break;
+                    }
+                }
+
+                // all else fails wait by source
+                let source = Game.getObjectById (creep.memory.source)
+                if (!creep.pos.inRangeTo(source, 3))
+                {
+                    let state = {
+                        name: "MOVE",
+                        context: {
+                            position: common.stringifyPos(source.pos),
+                            range: 3
+                        }
+                    };
+                    creep.pushState(state)
+                    break;
+                }
+
+
+                break;
+
+            case "MOVE":
+                break;
+            
+            case "FILL":
+                break;
+
         }
+
+        creep.executeState();
+
+
+        
+    //     // under attack
+    //     if (creep.room.memory.operating_mode == "UNDER_ATTACK")
+    //     {
+    //         var storage_vat = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+    //         filter: (structure) => {
+    //             return (structure.structureType == STRUCTURE_STORAGE &&
+    //                     structure.store[RESOURCE_ENERGY] != structure.store.getCapacity(RESOURCE_ENERGY));
+    //         }
+    //         });
+    //         if (storage_vat)
+    //         {
+    //             return storage_vat;
+    //         } 
+            
+    //         var tower = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+    //         filter: (structure) => {
+    //             return (structure.structureType == STRUCTURE_TOWER &&
+    //                     structure.store[RESOURCE_ENERGY] <= structure.store.getCapacity(RESOURCE_ENERGY) * fill_amount);
+    //         }
+    //         });
+            
+    //         if (tower && storage_vat)
+    //         {
+    //             // fill target
+    //             if (creep.transfer (newTarget, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) 
+    //             {
+    //                 creep.moveTo (newTarget, {visualizePathStyle: {stroke: '#ffffff'}});
+    //             }
+    //         }
+        
+    //         // let center = creep.room.memory.layout.center;
+    //         // let pos = new RoomPosition (center.x, center.y, creep.room.name);
+    //         // creep.moveTo (pos, {visualizePathStyle: {stroke: '#ffffff'}});
+    //         // return;
+    //     }
+
+
+    //     // If empty
+    //     if(!creep.memory.carrying)
+    //     {
+    //         // Make sure source is assigned in memory
+    //         if (!creep.memory.source)
+    //         {
+    //             return;
+    //         }
+            
+    //         this.gatherEnergy (creep);
+    //     //If full
+    //     }else{
+    //         let newTarget = this.getTargetToFill (creep);
+    //         if (newTarget != 'none') 
+    //         {
+    //             // fill target
+    //             if (creep.transfer (newTarget, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) 
+    //             {
+    //                 creep.moveTo (newTarget, {visualizePathStyle: {stroke: '#ffffff'}});
+    //             }
+    //         } 
+            
+    //     }
     },
 
-    gatherEnergy: function (creep) 
-    {
-        var source_obj = Game.getObjectById (creep.memory.source);
-        var resource = source_obj.pos.findClosestByPath (FIND_DROPPED_RESOURCES);
-        // Pick up dropped energy
-        if (resource)
-        {
-            var distToEnergy = source_obj.pos.getRangeTo (resource);
-            if (distToEnergy < 5)
-            {
-                if (creep.pickup (resource) == ERR_NOT_IN_RANGE)
-                {
-                    creep.moveTo (resource, {visualizePathStyle: {stroke: '#ff00dc'}});
-                }
-                return;
-            }
-        // No dropped energy around the container, extract from container
-        }
-
-        if (creep.memory.source_container)
-        {
-            let container_obj = Game.getObjectById (creep.memory.source_container);
-            if (creep.withdraw (container_obj, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) 
-            {
-                creep.moveTo (container_obj, {visualizePathStyle: {stroke: '#ffffff'}});
-            }
-            return;
-        }
-        
-    },
-
-    getTargetToFill (creep)
+    getTargetIdToFill (creep)
     {
         /*  Priority:
         *  (1) Spawn
@@ -161,7 +227,7 @@ var roleTransporter =
         var spawn = Game.getObjectById (creep.memory.spawn)
         if (spawn && spawn.store[RESOURCE_ENERGY] != spawn.store.getCapacity(RESOURCE_ENERGY))
         {
-            return spawn;
+            return spawn.id;
         } 
 
         //If there are non-full extensions
@@ -173,7 +239,7 @@ var roleTransporter =
         });
         if (extension)
         {
-            return extension;
+            return extension.id;
         } 
 
         //If the upgrade container is not full
@@ -182,7 +248,7 @@ var roleTransporter =
             let upgrade_container = Game.getObjectById (creep.memory.upgrade_container);
             if (upgrade_container.store[RESOURCE_ENERGY] <= upgrade_container.store.getCapacity(RESOURCE_ENERGY) * fill_amount)
             {
-                return upgrade_container
+                return upgrade_container.id
             }
         }
 
@@ -195,7 +261,7 @@ var roleTransporter =
         });
         if (tower)
         {
-            return tower;
+            return tower.id;
         }
 
         // long term storage
@@ -218,7 +284,7 @@ var roleTransporter =
                     if (ret[j].store[RESOURCE_ENERGY] < ret[j].storeCapacity)
                     {
                         //console.log(JSON.stringify(ret[j]))
-                        return ret[j]
+                        return ret[j].id
                     }
                 }
                 
@@ -234,7 +300,7 @@ var roleTransporter =
         });
         if (storage_vat)
         {
-            return storage_vat;
+            return storage_vat.id;
         } 
         
         return 'none'

@@ -14,15 +14,15 @@ let STRUCTURES = [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_CONTAINER, STR
 
 let BUILD_PRIORITY = 
 {  
-    'spawn': '00', 
-    'extension': '01', 
-    'container': '02',
-    'road': '03', 
-    'constructedWall': '04', 
-    'rampart': '04', 
-    'storage': '02', 
-    'tower': '05', 
-    'link': '05'
+    'spawn': 0, 
+    'extension': 1, 
+    'container': 2,
+    'road': 3, 
+    'constructedWall': 4, 
+    'rampart': 5, 
+    'storage': 6, 
+    'tower': 7, 
+    'link': 8
 }
 
 const LOOK_UP = 
@@ -45,9 +45,9 @@ var RoomPlanner =
     {
         this.initMemory (room);
         this.initLayout ();
-        this.constructionManager ();
+        this.constructionQueueManager ();
         
-        //this.showLayout ();
+        // this.showLayout ();
 
         this.flushMemory(room);
     },
@@ -60,7 +60,7 @@ var RoomPlanner =
         this.memory = Memory.rooms[room.name];
         
 
-        // Add paths to memory
+        // TODO: Add paths to memory
         if (!this.memory.paths) 
         {
             this.memory.paths = {};
@@ -100,12 +100,12 @@ var RoomPlanner =
         
         if (!this.memory.construction)
         {
-            this.memory.construction = {};
-            for (let idx in BUILD_PRIORITY)
-            {
-                let prio = BUILD_PRIORITY[idx];
-                this.memory.construction[prio] = [];
-            }
+            this.memory.construction = [];
+            // for (let idx in BUILD_PRIORITY)
+            // {
+            //     let prio = BUILD_PRIORITY[idx];
+            //     this.memory.construction[prio] = [];
+            // }
         }
 
         if (!this.memory.layout.storage)
@@ -192,35 +192,58 @@ var RoomPlanner =
     /*  
         Fills construction queue on RCL change
     */
-    constructionManager ()
+    constructionQueueManager ()
     {
-        //if (true)
-        if (Game.time % 19 == 0 || this.memory.layout.level != Game.rooms[this.room_name].controller.level)
+        if (Game.time % 10 == 0 || this.memory.layout.level != Game.rooms[this.room_name].controller.level)
         {
-            let build_sites = this.returnNeededStructures ();
+            this.memory.layout.level = Game.rooms[this.room_name].controller.level;
+            let build_sites = this.getNeededStructures ();
             
             if (build_sites)
             {
-                this.addToQueue (build_sites);
+                build_sites.forEach(site => 
+                    {
+                        if (!this.memory.construction.includes (site))
+                        {
+                            this.memory.construction.push(site);
+                        }
+                    });
             }
             
-            this.memory.layout.level = Game.rooms[this.room_name].controller.level;
         } 
     },
 
-    returnNeededStructures ()
+    getNeededStructures ()
     {
         let structures = [];
 
+        for (let idx in STRUCTURES)
+        {
+            let type = STRUCTURES[idx];
+            let points = common.getLayout (this.memory.layout.name, this.level, type, this.memory.layout.center);
+            if (!points) {continue;}
+            
+            for (let idx in points)
+            {
+                let pos = points[idx];
+                // check for container limit
+
+                if (this.isValidBuildLocation (pos, type))
+                {
+                    structures.push (LOOK_UP[type]+common.stringifyPos(pos));
+                }
+            }
+        }
+        
         // Upgrade Container
         if (this.memory.layout.storage.upgrade_container)
         {
             let container_str = this.memory.layout.storage.upgrade_container
             let container_pos = common.unstringifyPos (container_str);
-            if (this.checkLocation (container_pos, STRUCTURE_CONTAINER))
+            if (this.isValidBuildLocation (container_pos, STRUCTURE_CONTAINER))
             {
                 let prio = BUILD_PRIORITY[STRUCTURE_CONTAINER]
-                structures.push (prio+'co'+container_str);
+                structures.push ('co'+container_str);
             }
         }
 
@@ -231,10 +254,10 @@ var RoomPlanner =
             {
                 let container_str = this.memory.sources[id].container
                 let container_pos = common.unstringifyPos (container_str);
-                if (this.checkLocation (container_pos, STRUCTURE_CONTAINER))
+                if (this.isValidBuildLocation (container_pos, STRUCTURE_CONTAINER))
                 {
                     let prio = BUILD_PRIORITY[STRUCTURE_CONTAINER]
-                    structures.push (prio+'co'+container_str);
+                    structures.push ('co'+container_str);
                 }
             }
         }
@@ -250,77 +273,38 @@ var RoomPlanner =
         {
             let prio = BUILD_PRIORITY[STRUCTURE_ROAD];
             let pos = path_roads[idx]
-            if (this.checkLocation (pos, STRUCTURE_ROAD))
+            if (this.isValidBuildLocation (pos, STRUCTURE_ROAD))
             {
-                structures.push (prio+LOOK_UP[STRUCTURE_ROAD]+common.stringifyPos(pos));
-            }
-        }
-        
-
-        for (let idx in STRUCTURES)
-        {
-            let type = STRUCTURES[idx];
-            let points = common.getLayout (this.memory.layout.name, this.level, type, this.memory.layout.center);
-            if (!points) {continue;}
-            
-            let prio = BUILD_PRIORITY[type];
-            for (let idx in points)
-            {
-                let pos = points[idx];
-                // check for container limit
-
-                if (this.checkLocation (pos, type))
-                {
-                    structures.push (prio+LOOK_UP[type]+common.stringifyPos(pos));
-                }
+                structures.push (LOOK_UP[STRUCTURE_ROAD]+common.stringifyPos(pos));
             }
         }
 
         return structures;
     },
 
-    checkLocation (pos, type)
+    isValidBuildLocation (pos, type)
     {
         let room_pos = new RoomPosition (pos.x, pos.y, this.room_name)
-        let look = Game.rooms[this.room_name].lookForAt(LOOK_STRUCTURES, room_pos)
-        let terrain = new Room.Terrain(this.room_name);
+        let constructionSitesAtPosition = Game.rooms[this.room_name].lookForAt(LOOK_CONSTRUCTION_SITES, room_pos)
 
-        if (look.length)
+        if (constructionSitesAtPosition.length) { return; }
+
+        let structuresAtPosition = Game.rooms[this.room_name].lookForAt(LOOK_STRUCTURES, room_pos)
+        let terrain = new Room.Terrain(this.room_name);
+        
+        if (structuresAtPosition.length)
         {
-            for (let idx in look)
+            for (let idx in structuresAtPosition)
             {
-                const obj = look[idx];
-                if (obj.structureType == type || terrain.get (pos.x, pos.y) != 0)
+                const obj = structuresAtPosition[idx];
+                if (obj.structureType == type || 
+                    terrain.get (pos.x, pos.y) !== TERRAIN_MASK_WALL)
                 {
                     return false;
                 }
             }
         }
         return true;
-    },
-
-    addToQueue (build_sites)
-    {
-        // Check if in queue already, if not add it
-        // [prio] -> list
-
-        for (let idx in build_sites)
-        {
-            const str = build_sites[idx];
-            let prio = str.slice (0, 2);
-            let type_abbrv = str.slice (2,4);
-            let type = Object.keys(LOOK_UP).find(key => LOOK_UP[key] === type_abbrv)
-
-            if (!this.memory.construction[prio])
-            {
-                this.memory.construction[prio] = [];
-            }
-
-            if (!this.memory.construction[prio].includes (str))
-            {
-                this.memory.construction[prio].push (str);
-            }
-        }
     },
 
     initSourceContainers ()

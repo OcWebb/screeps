@@ -1,4 +1,4 @@
-let states = require('states')
+let statesLogic = require('states')
 
 var roles = 
 {
@@ -43,13 +43,13 @@ Creep.prototype.initStateMemory =
         {
             delete this.memory.state;
         }
-        // state = a stack of states, each with a name and a scope containing parameters
+        // state = a stack of states, each with a name and a context containing parameters
         this.memory.state = [
             {
                 name: "IDLE",
-                scope: { }
+                context: { }
             }
-        ]
+        ];
     }
 
 Creep.prototype.pushState = 
@@ -57,8 +57,10 @@ Creep.prototype.pushState =
     {
         if (this.memory.state) 
         {
-            this.memory.state.unshift(state)
+            this.memory.state.unshift(state);
         }
+
+        // this.logState();
     }
 
 Creep.prototype.popState = 
@@ -68,6 +70,8 @@ Creep.prototype.popState =
         {
             this.memory.state.shift();
         }
+
+        // this.logState();
     }
 
 Creep.prototype.getState = 
@@ -85,8 +89,29 @@ Creep.prototype.executeState =
     function() 
     {
         let state = this.getState();
-        if (state)
+        if (state && statesLogic[state.name])
         {
-            states[state.name](this, state.scope);
+            statesLogic[state.name](this, state.context);
         }
+    }
+
+Creep.prototype.logState = 
+    function() 
+    {
+        let state = this.getState();
+        let currentState = `${this.name}'s state: \t`;
+
+        let stateMemory = this.memory.state;
+        for (let idx in stateMemory)
+        {
+            let curState = stateMemory[idx];
+            if (idx != 0)
+            {
+                currentState += ' --> ' + curState.name
+            } else {
+                currentState += "[" + curState.name + "]";
+            }
+        }
+
+        console.log(currentState)
     }
