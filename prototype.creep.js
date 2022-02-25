@@ -60,7 +60,7 @@ Creep.prototype.pushState =
             this.memory.state.unshift(state);
         }
 
-        // this.logState();
+        this.logState();
     }
 
 Creep.prototype.popState = 
@@ -71,7 +71,7 @@ Creep.prototype.popState =
             this.memory.state.shift();
         }
 
-        // this.logState();
+        this.logState();
     }
 
 Creep.prototype.getState = 

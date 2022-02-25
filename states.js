@@ -10,6 +10,8 @@ let common = require('common');
  *  Fill
  *  Attack
  *  Defend
+ *  Build
+ *  Repair
  **/
 
 var states = {
@@ -22,7 +24,7 @@ var states = {
             let flag = Game.flags["idle"];
             if (flag)
             {
-                creep.moveTo(flag)
+                creep.moveTo (flag.pos, {visualizePathStyle: {stroke: '#ffffff'}, reusePath: 10});
             }
         },
 
@@ -32,6 +34,7 @@ var states = {
             let {position, range=1} = context;
 
             let parsedPosition = common.unstringifyPos(position);
+            if (!parsedPosition) { return; }
             // add room to pos string?
             let roomPosition = new RoomPosition (parsedPosition.x, parsedPosition.y, creep.room.name);
             
@@ -56,21 +59,14 @@ var states = {
             creep.harvest (source);
         } else {
             let containerMemory = creep.room.memory.sources[sourceId].container;
-            let moveDestiation = common.stringifyPos(source.pos);
+            let moveDestiation = source.pos;
 
-            if (containerMemory != "")
+            if (!containerMemory)
             {
-                moveDestiation = containerMemory;
+                moveDestiation = common.unstringifyPos(containerMemory);
             }
 
-            let state = {
-                name: "MOVE",
-                context: {
-                    position: moveDestiation,
-                    range: 0
-                }
-            }
-            creep.pushState(state);
+            pushMoveState(creep, moveDestiation);
         }
     }, 
 
@@ -79,6 +75,8 @@ var states = {
     {
         let {targetId, amount=0} = context;
         let targetToFill = Game.getObjectById (targetId);
+
+        if (!targetToFill) { return; }
         
         if (creep.carry.energy == 0 || !targetToFill)
         {
@@ -92,32 +90,101 @@ var states = {
             return;
         }
         
-        if (creep.pos.inRangeTo(targetToFill.pos, 1))
+        if (creep.transfer (targetToFill, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE)
         {
-            creep.transfer (targetToFill, RESOURCE_ENERGY);
-        } else {
-            let state = {
-                name: "MOVE",
-                context: {
-                    position: common.stringifyPos(targetToFill.pos)
-                }
-            }
-            creep.pushState(state);
+            pushMoveState(creep, targetToFill.pos);
         }
     }, 
 
     /** @param {Creep} creep **/
     "COLLECT": (creep, context) =>
     {
-        // let {pickupPosition} = context;
-        // let parsedPickupPosition = common.unstringifyPos(targetToFill.pos);
-        
+        let {targetId, resourceType=RESOURCE_ENERGY} = context;
+        let targetToCollect = Game.getObjectById (targetId);
+
+        if (!targetToCollect) { return; }
+
+        var droppedResource = targetToCollect.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
+            filter: (r) => r.resourceType == resourceType && targetToCollect.pos.getRangeTo (r) < 3
+        });
+
+        // Pick up dropped resource
+        if (droppedResource)
+        {
+            if (creep.pickup (droppedResource) == ERR_NOT_IN_RANGE)
+            {
+                pushMoveState(creep, droppedResource.pos);
+                return;
+            }
+        }
+        if (targetToCollect)
+        {
+            if (creep.withdraw (targetToCollect, resourceType) == ERR_NOT_IN_RANGE)
+            {
+                pushMoveState(creep, targetToCollect.pos)
+                return;
+            }
+        }
+
         if (creep.isFull())
         {
             creep.popState();
         }
     }, 
+
+    /** @param {Creep} creep **/
+    "BUILD": (creep, context) =>
+    {
+        let {targetId} = context;
+        let constructionSite = Game.getObjectById (targetId);
+
+        if (!constructionSite) 
+        { 
+            creep.popState();
+            return; 
+        }
+        
+        if(creep.build(constructionSite) == ERR_NOT_IN_RANGE)
+        {
+            pushMoveState(creep, constructionSite.pos);
+        }
+    }, 
+
+    /** @param {Creep} creep **/
+    "REPAIR": (creep, context) =>
+    {
+        let {targetId, targetHitpoints} = context;
+        let targetToRepair = Game.getObjectById (targetId);
+
+        if (!targetToRepair) 
+        { 
+            creep.popState();
+            return; 
+        }
+
+        if(creep.repair(targetToRepair) == ERR_NOT_IN_RANGE)
+        {
+            let state = {
+                name: "MOVE",
+                context: {
+                    position: common.stringifyPos(targetToRepair.pos)
+                }
+            }
+            creep.pushState(state);
+        }
+    }, 
 };
+
+function pushMoveState(creep, position)
+{ 
+    let state = {
+        name: "MOVE",
+        context: {
+            position: common.stringifyPos(position)
+        }
+    }
+    creep.pushState(state);
+}
 
 module.exports = states;
 

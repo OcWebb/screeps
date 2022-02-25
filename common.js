@@ -60,6 +60,17 @@ var common =
         return Object.keys (LOOK_UP).find(key => LOOK_UP[key] === str);
     },
 
+    decodeStrutureTypeAndPosition (str)
+    { 
+        let encoding = str.slice (0,2);
+        let stringPosition = str.slice (2);
+
+        let type = common.decodeStructure (encoding);
+        let position = common.unstringifyPos (stringPosition);
+
+        return {type, position}
+    },
+
     log ()
     {
         for (var i = 0; i < arguments.length; i++)

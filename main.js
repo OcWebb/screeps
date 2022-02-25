@@ -15,7 +15,7 @@ module.exports.loop = function ()
     let visualFlag = Game.flags["visual-3"];
     if (visualFlag)
     {
-        // common.showLayout (visualFlag.pos, "bunker", 8, visualFlag.room.name);
+        common.showLayout (visualFlag.pos, "bunker", 2, visualFlag.room.name);
     }
 
     if (Memory.newGame)

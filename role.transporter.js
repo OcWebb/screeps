@@ -55,15 +55,31 @@ var roleTransporter =
         
         switch (currentState.name) {
             case "IDLE":
+
                 if (creep.carry.energy == 0)
                 {
-                    let state = {
-                        name: "COLLECT",
-                        context: {
-                            sourceId: this.source_id
-                        }
-                    };
-                    creep.pushState(state)
+                    if (creep.memory.source_container)
+                    {
+                        let container = Game.getObjectById (creep.memory.source_container);
+                        let state = {
+                            name: "COLLECT",
+                            context: {
+                                targetId: container.id
+                            }
+                        };
+                        creep.pushState(state)
+                    } 
+                    else if (creep.memory.source)
+                    {
+                        let state = {
+                            name: "COLLECT",
+                            context: {
+                                targetId: creep.memory.source
+                            }
+                        };
+                        creep.pushState(state)
+                    }
+                    
                 } else {
                     let state = {
                         name: "FILL",
@@ -76,50 +92,6 @@ var roleTransporter =
                 break;
             
             case "COLLECT":
-
-                var assignedSource = Game.getObjectById (creep.memory.source);
-                var droppedEnergy = assignedSource.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
-                    filter: (r) => r.resourceType == RESOURCE_ENERGY
-                });
-                
-                // TODO use storage near spawn if closer
-
-                // Pick up dropped energy
-                if (droppedEnergy)
-                {
-                    var distanceToEnergy = assignedSource.pos.getRangeTo (droppedEnergy);
-                    if (distanceToEnergy < 5)
-                    {
-                        if (creep.pickup (droppedEnergy) == ERR_NOT_IN_RANGE)
-                        {
-                            let state = {
-                                name: "MOVE",
-                                context: {
-                                    position: common.stringifyPos(droppedEnergy.pos)
-                                }
-                            };
-                            creep.pushState(state)
-                            break;
-                        }
-                    }
-                }
-
-                if (creep.memory.source_container)
-                {
-                    let container = Game.getObjectById (creep.memory.source_container);
-                    if (creep.withdraw (container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) 
-                    {
-                        let state = {
-                            name: "MOVE",
-                            context: {
-                                position: common.stringifyPos(container.pos)
-                            }
-                        };
-                        creep.pushState(state)
-                        break;
-                    }
-                }
-
                 // all else fails wait by source
                 let source = Game.getObjectById (creep.memory.source)
                 if (!creep.pos.inRangeTo(source, 3))

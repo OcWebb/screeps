@@ -268,7 +268,7 @@ var RoomManager =
         }
     },
 
-    // Good
+
     scoreBoard (room)
     {
         //------Unit Counts-----//
@@ -302,11 +302,23 @@ var RoomManager =
             energy_color = '#119300';
         }
 
+        let row = 0;
         //------Top Right room status-----//
-        room.visual.text('Operation Mode: ' + this.memory.operating_mode, 49, 1, {align: 'right', color: '#a8f0ff'});
-        room.visual.text("Next unit to spawn: " + this.memory.nextSpawn, 49, 2, {align: 'right', color: '#a8f0ff'});
-        room.visual.text("Energy: " + rounded_percentage + '%', 49, 3, {align: 'right', color: energy_color});
-        room.visual.text("Energy Amount: " + room.energyAvailable, 49, 4, {align: 'right', color: energy_color});
+        room.visual.text('Operation Mode: ' + this.memory.operating_mode, 49, ++row, {align: 'right', color: '#a8f0ff'});
+        room.visual.text("Next unit to spawn: " + this.memory.nextSpawn, 49, ++row, {align: 'right', color: '#a8f0ff'});
+        room.visual.text("Energy: " + rounded_percentage + '%', 49, ++row, {align: 'right', color: energy_color});
+        room.visual.text("Energy Amount: " + room.energyAvailable, 49, ++row, {align: 'right', color: energy_color});
+        
+        //------Construction queue-----//
+        room.visual.text("Construction Queue", 49, 6, {align: 'right', color: '#a8f0ff'});
+        row += 2;
+        this.memory.construction.forEach(structureEncoding => 
+        {
+            let point = structureEncoding.slice(2);
+            let type = common.decodeStructure(structureEncoding.slice(0,2));
+            let text = `(${this.memory.construction.indexOf(structureEncoding)}):\t\t${type} ${point}`; 
+            Game.rooms[this.room_name].visual.text(text, 49, ++row, {align: 'right', color: '#a8f0ff'});
+        });
 
     },
 

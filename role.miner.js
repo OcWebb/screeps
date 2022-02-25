@@ -14,7 +14,6 @@ var roleMiner = {
         }
 
         this.room_mem = Game.rooms[creep.room.name].memory;
-        this.source_id = creep.memory.source;
 
         if(creep.memory.carrying && creep.carry.energy == 0)
         {
@@ -34,20 +33,21 @@ var roleMiner = {
                 let state = {
                     name: "HARVEST",
                     context: {
-                        sourceId: this.source_id
+                        sourceId: creep.memory.source
                     }
                 }
                 creep.pushState(state)
                 break;
             
             case "HARVEST":
-                let transportAssigned = this.room_mem.sources[this.source_id].transporters > 0;
+                let transportAssigned = this.room_mem.sources[creep.memory.source].transporters > 0;
 
                 // fill spawn ourselves if seeding room or no transporter assigned
                 if ((room_level < 2 || !transportAssigned) && creep.isFull())
                 {
                     // fill spawn until enough miners spawn
-                    if (creep.room.memory.units.miner < Object.keys(creep.room.memory.sources).length)
+                    if (creep.room.memory.units.miner < Object.keys(creep.room.memory.sources).length &&
+                        creep.room.memory.units.transporter == 0)
                     {
                         var targets_to_fill = creep.room.find(FIND_STRUCTURES, {
                             filter: (structure) => {
