@@ -193,7 +193,7 @@ var roleTransporter =
         *  (4) Stockpile
         */
 
-        let fill_amount = .6;
+        let fill_amount = .60;
 
         //If the spawn is not full
         var spawn = Game.getObjectById (creep.memory.spawn)
@@ -275,7 +275,7 @@ var roleTransporter =
             return storage_vat.id;
         } 
         
-        return 'none'
+        return null;
     },
 };
 

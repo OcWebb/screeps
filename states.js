@@ -137,13 +137,14 @@ var states = {
     {
         let {targetId} = context;
         let constructionSite = Game.getObjectById (targetId);
-
         if (!constructionSite) 
         { 
             creep.popState();
             return; 
         }
         
+        common.log(targetId)
+        common.log(creep.build(constructionSite))
         if(creep.build(constructionSite) == ERR_NOT_IN_RANGE)
         {
             pushMoveState(creep, constructionSite.pos);

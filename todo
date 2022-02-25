@@ -1,1 +1,3 @@
 optimize miner count per source based on work parts 
+get missing unplacable structures from next level up
+repair queue at room level for builders/towers

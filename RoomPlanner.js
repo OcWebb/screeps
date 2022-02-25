@@ -44,11 +44,12 @@ var RoomPlanner =
         this.initLayout ();
         this.constructionQueueManager ();
         
-        // this.showLayout ();
-
+        //this.showLayout ();
         this.showConstructionQueue();
-
+        
+        
         this.flushMemory(room);
+        
     },
 
     
@@ -97,7 +98,7 @@ var RoomPlanner =
             this.memory.layout.level = room.controller.level;
         }
         
-        if (!this.memory.construction)
+        if (!this.memory.construction || !this.memory.construction.length)
         {
             this.memory.construction = [];
         }
@@ -194,8 +195,7 @@ var RoomPlanner =
         {
             this.memory.layout.level = Game.rooms[this.room_name].controller.level;
             let nextBuildTarget = this.getNextStructureToBuild ();
-            common.log(nextBuildTarget);
-            
+            // common.log("next target " + nextBuildTarget)
             if (nextBuildTarget)
             {
                 this.memory.construction.push(nextBuildTarget);
@@ -300,34 +300,40 @@ var RoomPlanner =
     {
         let constructionQueueEncoding = STRUCTURE_ENCODING[type] + common.stringifyPos(pos);
 
-        common.log("Checking " + constructionQueueEncoding);
-
+        
         if (this.memory.construction.includes(constructionQueueEncoding))
         {
             // we have already queued this location
             return false;
         }
-
+        
         let room_pos = new RoomPosition (pos.x, pos.y, this.room_name)
         let constructionSitesAtPosition = Game.rooms[this.room_name].lookForAt(LOOK_CONSTRUCTION_SITES, room_pos)
 
         if (constructionSitesAtPosition.length) { return; }
-
-        let structuresAtPosition = Game.rooms[this.room_name].lookForAt(LOOK_STRUCTURES, room_pos)
-        let terrain = new Room.Terrain(this.room_name);
         
+        let structuresAtPosition = Game.rooms[this.room_name].lookForAt(LOOK_STRUCTURES, room_pos)
+        
+        // common.log(structuresAtPosition.length);
         if (structuresAtPosition.length)
         {
             for (let idx in structuresAtPosition)
             {
                 const obj = structuresAtPosition[idx];
-                if (obj.structureType == type || 
-                    terrain.get (pos.x, pos.y) !== TERRAIN_MASK_WALL)
+                // common.log(obj.structureType, type);
+                if (obj.structureType == type)
                 {
                     return false;
                 }
             }
+        } 
+        
+        let terrain = new Room.Terrain(this.room_name);
+        if (terrain.get (pos.x, pos.y) == TERRAIN_MASK_WALL)
+        {
+            return false;
         }
+
         return true;
     },
 
@@ -469,6 +475,8 @@ var RoomPlanner =
 
     showConstructionQueue()
     {
+        if (!this.memory.construction || this.memory.construction.length) { return; }
+
         this.memory.construction.forEach(structureEncoding => {
             let point = common.unstringifyPos(structureEncoding.slice(2));
             let type = common.decodeStructure(structureEncoding.slice(0,2));

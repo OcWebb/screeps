@@ -1,3 +1,5 @@
+const common = require("./common");
+
 var roleUpgrader = {
 
     /** @param {Creep} creep **/
@@ -39,7 +41,9 @@ var roleUpgrader = {
 
         if(creep.memory.upgrading)
         {
-            if(creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE)
+            let constructionSitesAtPosition = creep.room.lookForAt(LOOK_CONSTRUCTION_SITES, creep.pos)
+            // common.log(constructionSitesAtPosition);
+            if(creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE || constructionSitesAtPosition.length)
             {
                 creep.moveTo(creep.room.controller, {visualizePathStyle: {stroke: '#ffffff'}, reusePath: 10});
             }
