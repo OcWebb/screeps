@@ -30,12 +30,12 @@ StructureTower.prototype.repair_structures =
         });
         var walls = this.room.find(FIND_STRUCTURES, {
             filter: (structure) => {
-                return (structure.structureType == STRUCTURE_WALL && structure.hits < 80000);
+                return (structure.structureType == STRUCTURE_WALL && structure.hits < 150000);
             }
         });
         var ramparts = this.room.find(FIND_STRUCTURES, {
             filter: (structure) => {
-                return (structure.structureType == STRUCTURE_RAMPART && structure.hits < 80000);
+                return (structure.structureType == STRUCTURE_RAMPART && structure.hits < 150000);
             }
         });
         
