@@ -3,31 +3,35 @@ var roleScout = {
     /** @param {Creep} creep **/
     run: function (creep) 
     {
-        // Room to travel to, sent by the scout manager
-        if (creep.memory.mode == undefined)
-        {
-            creep.memory.mode = 'exploring';
-        }
         // Number of new rooms explored
         if (creep.memory.depth == undefined)
         {
             creep.memory.depth = 0;
         }
-        // room to head to
-        if (creep.memory.target == undefined)
-        {
-            creep.memory.target = '';
-        }
+
         // Save the string of our home base
-        if (creep.memory.home_room == undefined)
+        if (creep.memory.homeRoom == undefined)
         {
-            creep.memory.home_room = creep.room.name;
+            creep.memory.homeRoom = creep.room.name;
         }
-        // path taken
-        if (creep.memory.path == undefined)
-        {
-            creep.memory.path = [];
+
+
+        let currentState = creep.getState();
+        // creep.logState();
+        
+        switch (currentState.name) {
+            case "IDLE":
+                    let state = {
+                        name: "FILL",
+                        context: {
+                            targetId: this.getTargetIdToFill(creep)
+                        }
+                    };
+                    creep.pushState(state)
+                break;
         }
+
+        creep.executeState();
 
         // Go back home
         if (creep.memory.mode == 'return')
