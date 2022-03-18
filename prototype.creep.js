@@ -21,7 +21,7 @@ Creep.prototype.runRole =
             this.initStateMemory();
         }
 
-        if (this.memory.role)
+        if (this.memory.role && roles[this.memory.role])
         {
             roles[this.memory.role].run(this);
         }

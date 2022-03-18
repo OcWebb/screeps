@@ -80,4 +80,12 @@ StructureTower.prototype.repair_structures =
                 this.repair(loweset_wall);
             }
         }
+        else if (ramparts.length != 0)
+        {
+            let loweset_wall = _.min(ramparts, function(o) { return o.hits; });
+            if(this.repair(loweset_wall) == ERR_NOT_IN_RANGE)
+            {
+                this.repair(loweset_wall);
+            }
+        }
     };
