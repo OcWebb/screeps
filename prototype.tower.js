@@ -35,7 +35,7 @@ StructureTower.prototype.repair_structures =
         });
         var ramparts = this.room.find(FIND_STRUCTURES, {
             filter: (structure) => {
-                return (structure.structureType == STRUCTURE_RAMPART && structure.hits < 150000);
+                return (structure.structureType == STRUCTURE_RAMPART && structure.hits < 400000);
             }
         });
         

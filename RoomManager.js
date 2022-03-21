@@ -285,6 +285,23 @@ var RoomManager =
         }
         var decRatio = (room.energyAvailable / room.energyCapacityAvailable) * 100;
         var rounded_percentage = Math.round(decRatio);
+        
+        // log stats
+    
+        if (!Memory.stats.roomEnergy)
+        {
+            Memory.stats.roomEnergy = 0;
+        }
+        
+        Memory.roomEnergy = rounded_percentage.toFixed(2);
+        
+        let roomTotalStored = room.storage.store.getUsedCapacity(RESOURCE_ENERGY);
+        if (!Memory.stats.roomTotalStored)
+        {
+            Memory.stats.roomTotalStored = 0;
+        }
+        
+        Memory.stats.roomTotalStored = roomTotalStored;
 
         let energy_color = '#ffffff';
         if (parseInt(rounded_percentage) < 25)
