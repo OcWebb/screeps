@@ -4,6 +4,7 @@ var ratios =
     upgrader: {"move": 1, "carry": 2, "work": 1},
     builder: {"work": 2, "carry": 1, "move": 1},
     transporter: {"move": 1, "carry": 2},
+    base_manager: {"move": 1, "carry": 1},
     miner: {"work": 2, "move": 1, "carry": 1},
     colony_seed: {"claim": 1, "move": 1},
     attacker: {"attack": 1, "move": 1},
@@ -30,20 +31,24 @@ function ()
     {
         let role = this.room.memory.nextSpawn;
 
-        if (!role) {return;}
-
+        if (!role) { return; }
+        
+        let roomEnergyFull = this.room.energyAvailable == this.room.energyCapacityAvailable;
+        
+        if (!roomEnergyFull) { return; }
+        
         //  get the cost of the creep to be spawned
-        var cost = this.creepCost (this.creepFromRatio (12, ratios[role]));
+        let cost = this.creepCost (this.creepFromRatio (20, ratios[role]));
         if (this.room.energyAvailable >=  cost && cost != 0)
         {   
-            var creepParts;
+            let creepParts;
             if (role == "miner")
             {
-                creepParts = this.creepFromRatio (9, ratios[role]);
+                creepParts = this.creepFromRatio (12, ratios[role]);
             } else if (role == 'scout') {
                 creepParts = ['move']
             } else {
-                creepParts = this.creepFromRatio (12, ratios[role]);
+                creepParts = this.creepFromRatio (20, ratios[role]);
             }
             
             let num = Game.time;

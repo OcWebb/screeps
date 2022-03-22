@@ -35,7 +35,7 @@ StructureTower.prototype.repair_structures =
         });
         var ramparts = this.room.find(FIND_STRUCTURES, {
             filter: (structure) => {
-                return (structure.structureType == STRUCTURE_RAMPART && structure.hits < 150000);
+                return (structure.structureType == STRUCTURE_RAMPART && structure.hits < 400000);
             }
         });
         
@@ -75,6 +75,14 @@ StructureTower.prototype.repair_structures =
         else if (walls.length != 0)
         {
             let loweset_wall = _.min(walls, function(o) { return o.hits; });
+            if(this.repair(loweset_wall) == ERR_NOT_IN_RANGE)
+            {
+                this.repair(loweset_wall);
+            }
+        }
+        else if (ramparts.length != 0)
+        {
+            let loweset_wall = _.min(ramparts, function(o) { return o.hits; });
             if(this.repair(loweset_wall) == ERR_NOT_IN_RANGE)
             {
                 this.repair(loweset_wall);
