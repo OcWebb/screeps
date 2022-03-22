@@ -75,7 +75,6 @@ module.exports.loop = function ()
         // console.log(sorted[c]["cpu"]);
         // console.log(sorted[c]['name'] + ": " + sorted[c]["cpu"].toFixed(2))
     }
-    // console.log(" ----- ----- " + Game.cpu.getUsed().toFixed(2) + " ----- -----\n\n");
 }
 
 function initMemory ()
@@ -89,6 +88,11 @@ function initMemory ()
     if (!Memory.layouts)
     {
         Memory.layouts = {};
+    }
+    
+    if (!Memory.stats)
+    {
+        Memory.stats = {};
     }
 
     let layout_names = Object.keys(LAYOUTS);

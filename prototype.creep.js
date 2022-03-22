@@ -6,6 +6,7 @@ var roles =
     builder: require('role.builder'),
     miner: require('role.miner'),
     transporter: require('role.transporter'),
+    base_manager: require('role.base_manager'),
     colony_seed: require('role.colony_seed'),
     attacker: require('role.attacker'),
     defender: require('role.defender'),
@@ -20,7 +21,7 @@ Creep.prototype.runRole =
             this.initStateMemory();
         }
 
-        if (this.memory.role)
+        if (this.memory.role && roles[this.memory.role])
         {
             roles[this.memory.role].run(this);
         }
@@ -80,9 +81,11 @@ Creep.prototype.getState =
         if (this.memory.state) 
         {
             return this.memory.state[0];
+        } else {
+            this.initStateMemory()
         }
 
-        return undefined;
+        return this.memory.state[0];
     }
 
 Creep.prototype.executeState = 
