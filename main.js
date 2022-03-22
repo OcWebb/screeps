@@ -75,7 +75,6 @@ module.exports.loop = function ()
         // console.log(sorted[c]["cpu"]);
         // console.log(sorted[c]['name'] + ": " + sorted[c]["cpu"].toFixed(2))
     }
-    
 }
 
 function initMemory ()
