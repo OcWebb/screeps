@@ -39,6 +39,11 @@ function ()
         
         //  get the cost of the creep to be spawned
         let cost = this.creepCost (this.creepFromRatio (20, ratios[role]));
+        if (role == 'scout')
+        {
+            cost = BODYPART_COST['move']
+        }
+
         if (this.room.energyAvailable >=  cost && cost != 0)
         {   
             let creepParts;

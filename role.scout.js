@@ -3,17 +3,31 @@ var roleScout = {
     /** @param {Creep} creep **/
     run: function (creep) 
     {
+        let maxExplorationDepth = 2;
+
         // Number of new rooms explored
-        if (creep.memory.depth == undefined)
+        if (!creep.memory.depth)
         {
             creep.memory.depth = 0;
         }
 
         // Save the string of our home base
-        if (creep.memory.homeRoom == undefined)
+        if (!creep.memory.homeRoom)
         {
             creep.memory.homeRoom = creep.room.name;
         }
+
+        // Save the string of our target room
+        if (!creep.memory.targetRoom)
+        {
+            creep.memory.targetRoom = creep.room.name;
+        }
+
+        if (!creep.memory.path)
+        {
+            creep.memory.path = [];
+        }
+
 
 
         let currentState = creep.getState();
@@ -21,69 +35,59 @@ var roleScout = {
         
         switch (currentState.name) {
             case "IDLE":
-                    let state = {
-                        name: "FILL",
-                        context: {
-                            targetId: this.getTargetIdToFill(creep)
-                        }
-                    };
-                    creep.pushState(state)
+                if (creep.memory.depth <= maxExplorationDepth)
+                {
+                    let nextRoomName = this.findNewRoom(creep);
+                    creep.memory.targetRoom = nextRoomName;
+                    this.pushMove(creep, '25-25', nextRoomName);
+                } 
+                else 
+                {
+                    if (creep.room.name != creep.memory.homeRoom)
+                    {
+                        creep.memory.targetRoom = creep.memory.homeRoom;
+                        this.pushMove(creep, '25-25', creep.memory.homeRoom);
+                    } else {
+                        // we have returned home, start exploring again 
+                        creep.memory.depth = 0;
+                    }
+                }
+                break;
+            
+            case "MOVE":
+                let currentTimestamp = Game.time;
+                if (!Memory.map[creep.room.name] || 
+                    (Memory.map[creep.room.name].timestamp - currentTimestamp) > 10)
+                {
+                    console.log("SCOUT: Storing room " + creep.room.name + " in Memory.map");
+                    creep.memory.depth += 1;
+                    this.addRoomToMemory (creep);
+                }
+
+                if (creep.memory.room == creep.memory.targetRoom)
+                {
+                    creep.popState();
+                    break;
+                }
+
+
                 break;
         }
 
         creep.executeState();
-
-        // Go back home
-        if (creep.memory.mode == 'return')
-        {
-            if (creep.room.name != creep.memory.home_room)
-            {
-                this.goToRoom (creep, creep.memory.home_room);
-            } else {
-                // we are home, start again
-                creep.memory.mode = 'exploring'
-                creep.memory.depth = 0;
-                creep.memory.target = '';
-                delete(creep.memory.path);
-                creep.memory.path = [];
-            }
-        } 
-        // We are exploring
-        else if (creep.memory.mode == 'exploring')
-        {
-            if (creep.memory.depth >= 2)
-            {
-                creep.memory.mode = 'return'
-                return;
-            }
-            
-            if (creep.memory.target)
-            {
-                // if we are in the target room
-                if (creep.memory.target == creep.room.name)
-                {
-                    if (!Memory.map[creep.memory.target])
-                    {
-                        creep.memory.depth += 1;
-                    }
-
-                    this.addRoomToMemory (creep);
-                    creep.memory.path.push (creep.room.name);
-                    creep.memory.target = this.findNewRoom (creep);
-                    
-                } else {
-                    this.goToRoom (creep, creep.memory.target);
-                }
-            } else {
-                creep.memory.target = this.findNewRoom (creep);
-            }
-        }
-
     },
 
-    goToRoom (creep, room_name)
+    pushMove (creep, position='25-25', roomName=creep.memory.homeRoom)
     {
-        creep.moveTo(new RoomPosition(25, 25, room_name), {visualizePathStyle: {stroke: '#02e8f4'}});
+        let state = {
+            name: "MOVE",
+            context: {
+                position: position,
+                roomName: roomName,
+                range: 40,
+            }
+        };
+        creep.pushState(state)
     },
 
     addRoomToMemory (creep)
@@ -91,29 +95,57 @@ var roleScout = {
         Memory.map[creep.room.name] = {};
         let room = Game.rooms[creep.room.name];
 
-        Memory.map[creep.room.name].distance = Game.map.getRoomLinearDistance(creep.memory.home_room, creep.room.name);
-        Memory.map[creep.room.name].status = Game.map.getRoomStatus(room.name).status;
+
+        // only store these once
+        if (!Memory.map[room.name].distance)
+        {
+            Memory.map[room.name].distance = Game.map.getRoomLinearDistance(creep.memory.homeRoom, room.name);
+        }
+
+        if (!Memory.map[room.name].status)
+        {
+            Memory.map[room.name].status = Game.map.getRoomStatus(room.name).status;
+        }
+
+        
+        // store these every time we enter room
+
+        Memory.map[room.name].timestamp = Game.time;
 
         if (room.controller)
         {
-            Memory.map[creep.room.name].owner = room.controller.owner;
-            Memory.map[creep.room.name].level = room.controller.level;
+            Memory.map[room.name].owner = room.controller.owner;
+            Memory.map[room.name].level = room.controller.level;
+            Memory.occupiedRooms.push(room.name);
         }
 
-        // add hostile count
-        let room_creeps = creep.pos.lookFor(LOOK_CREEPS);
-        let hostile_count = 0;
-        if(room_creeps.length) 
+        let hostilesInRoom = creep.room.find(FIND_HOSTILE_CREEPS);
+        Memory.map[room.name].hostiles = hostilesInRoom.length > 0;
+
+        let sources = Game.rooms[room.name].find(FIND_SOURCES);
+
+        if (sources.length)
         {
-            for (let idx in room_creeps)
-            {
-                if (room_creeps[idx].getActiveBodyparts(ATTACK) > 0 || room_creeps[idx].getActiveBodyparts(RANGED_ATTACK) > 0)
-                {
-                    hostile_count++;
-                }
-            }
+            Memory.map[room.name].numberOfSources = sources.length;
+            Memory.map[room.name].sourceIds = _.map(sources, 'id');
         }
-        Memory.map[creep.room.name].hostiles = hostile_count;
+
+
+    },
+
+    managePath (creep)
+    {
+        if (creep.memory.path[0] == creep.room.name)
+        {
+            return;
+        }
+
+        creep.memory.path.unshift(creep.room.name);
+
+        if (creep.memory.path.length > 3)
+        {
+            creep.memory.path.pop();
+        }
 
     },
 
@@ -121,32 +153,48 @@ var roleScout = {
     {
         // prevent it from back tracking
         let exits = Game.map.describeExits(creep.room.name);
-        let new_target = 'empty'
+
+        if (!exits) {return}
+        
         for (let idx in exits)
         {
             let room_name = exits[idx];
 
-            if (Memory.map[room_name] == undefined)
+            if (!Memory.map[room_name])
             {
-                return room_name
+                return room_name;
             }
         }
-        if (new_target == 'empty')
+        
+        var room_arr = Object.keys(exits).map(function(key){
+            return exits[key];
+        });
+        let idx = Math.floor(Math.random() * exits.length);
+
+        let unexploredRooms = [];
+        _.forEach(room_arr, (roomName) => 
         {
-            if (!exits) {return}
-            var room_arr = Object.keys(exits).map(function(key){
-                return exits[key];
-            });
-            let idx = Math.floor(Math.random() * room_arr.length);
-            // do not backtrack
-            let last_room = creep.memory.path[creep.memory.path.length - 2];
-            while (room_arr[idx] == last_room)
+            if (creep.memory.path.contains(room_arr[idx]))
             {
-                idx = Math.floor(Math.random() * room_arr.length);
+                unexploredRooms.add(roomName);
             }
-            return room_arr[idx];
+        })
+
+        if (unexploredRooms.length)
+        {
+            return unexploredRooms[0];
         }
-        return -1
+
+        let i = 4;
+        while (creep.memory.path &&
+                !Memory.map.occupiedRooms.contains(room_arr[idx]) && 
+                i-- != 0)
+        {
+            exits.splice(idx, 1);
+            idx = Math.floor(Math.random() * exits.length);
+        }
+
+        return room_arr[idx];
     }
 };
 

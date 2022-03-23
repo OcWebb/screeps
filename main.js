@@ -79,10 +79,14 @@ module.exports.loop = function ()
 
 function initMemory ()
 {
-    
     if (!Memory.map)
     {
         Memory.map = {};
+    }
+
+    if (!Memory.occupiedRooms)
+    {
+        Memory.occupiedRooms = [];
     }
 
     if (!Memory.layouts)
@@ -111,18 +115,19 @@ function drawMapInfo ()
 {
     for (let room in Memory.map)
     {
-        Game.map.visual.text (room, new RoomPosition(2, 1, room), {align: 'left', opacity: 0.8, fontSize: 4}); 
-        let i = 2;
+        let i = 3;
+        Game.map.visual.text (room, new RoomPosition(2, i, room), {align: 'left', opacity: 0.8, fontSize: 5}); 
         for (let j in Memory.map[room]) 
         {
-            //console.log(j)
-            i+= 3.5
+            i += 4
             let text = Memory.map[room][j];
+
             if (j == 'owner')
             {
                 text = Memory.map[room][j]['username'];
             }
-            Game.map.visual.text(j + ': ' + text, new RoomPosition(2, i, room), {align: 'left', opacity: 0.8, fontSize: 4});
+
+            Game.map.visual.text(j + ': ' + text, new RoomPosition(2, i, room), {align: 'left', opacity: 0.8, fontSize: 4.5});
         }
     }
 }

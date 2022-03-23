@@ -14,7 +14,7 @@ var OPERATING_MODES =
             'miner': 'TBD',
             'transporter': 'TBD',
             'defender': 1,
-            'scout': 0,
+            'scout': 2,
             'builder': 3,
             'upgrader': 2
         },

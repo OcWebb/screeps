@@ -31,12 +31,12 @@ var states = {
     /** @param {Creep} creep **/
     "MOVE": (creep, context) =>
         {
-            let {position, range=1} = context;
+            let {position, roomName=creep.room.name, range=1} = context;
 
             let parsedPosition = common.unstringifyPos(position);
             if (!parsedPosition) { return; }
             // add room to pos string?
-            let roomPosition = new RoomPosition (parsedPosition.x, parsedPosition.y, creep.room.name);
+            let roomPosition = new RoomPosition (parsedPosition.x, parsedPosition.y, roomName);
             
             if (!creep.pos.inRangeTo(roomPosition, range))
             {
@@ -176,12 +176,13 @@ var states = {
     }, 
 };
 
-function pushMoveState(creep, position)
+function pushMoveState(creep, position, roomName=creep.room.name)
 { 
     let state = {
         name: "MOVE",
         context: {
-            position: common.stringifyPos(position)
+            position: common.stringifyPos(position),
+            roomName: roomName
         }
     }
     creep.pushState(state);
