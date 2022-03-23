@@ -1,3 +1,5 @@
+let common = require('common');
+
 var roleScout = {
     
     /** @param {Creep} creep **/
@@ -174,7 +176,7 @@ var roleScout = {
         let unexploredRooms = [];
         _.forEach(room_arr, (roomName) => 
         {
-            if (creep.memory.path.contains(room_arr[idx]))
+            if (creep.memory.path.includes(room_arr[idx]))
             {
                 unexploredRooms.add(roomName);
             }
@@ -187,11 +189,12 @@ var roleScout = {
 
         let i = 4;
         while (creep.memory.path &&
-                !Memory.map.occupiedRooms.contains(room_arr[idx]) && 
+                !Memory.occupiedRooms.includes(room_arr[idx]) && 
                 i-- != 0)
         {
-            exits.splice(idx, 1);
-            idx = Math.floor(Math.random() * exits.length);
+            common.log()
+            room_arr = room_arr.splice(idx, 1);
+            idx = Math.floor(Math.random() * room_arr.length);
         }
 
         return room_arr[idx];

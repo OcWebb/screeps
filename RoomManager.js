@@ -49,13 +49,6 @@ var RoomManager =
 
         this.manageTowers (room);
         
-        if (this.memory.units.miners < Object.keys(this.memory.sources).length)
-        {
-            this.memory.haltOperations = true;
-        } else {
-            this.memory.haltOperations = false;
-        }
-        
         this.scoreBoard (room);
         this.flushMemory (room);
     },
